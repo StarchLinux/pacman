@@ -175,6 +175,7 @@ set | grep '^RFlag=' >/dev/null || {
 		set -e
 		build
 		if typeset +f | grep '^check$';   then check;   fi
+		rm -rf "$pkgdir"
 		if typeset +f | grep '^package$'; then package; fi
 		set +e
 	} && chdir "$startdir"
