@@ -1,0 +1,3 @@
+CFLAGS += -include ../config.h -I../libalpm -D_GNU_SOURCE
+
+LDADD += ../libalpm/libalpm.a -larchive -lcurl -lz -lbz2 -llzma
