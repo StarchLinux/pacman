@@ -84,11 +84,12 @@ function writePkginfo {
 	echo "size      = $(dc -e "$(du -sk | cut -f 1) 1024 * p")"
 	echo "arch      = $pkgarch"
 	
-	for x in "${groups[@]}";     do echo "group = $x"; done
+	for x in "${groups[@]}";     do echo "group  = $x"; done
+	for x in "${backup[@]}";     do echo "backup = $x"; done
 	for x in "${replaces[@]}";   do echo "replaces  = $x"; done
 	for x in "${conflicts[@]}";  do echo "conflict  = $x"; done
 	for x in "${provides[@]}";   do echo "provides  = $x"; done
-	for x in "${depends[@]}";    do echo "depends   = $x"; done
+	for x in "${depends[@]}";    do echo "depend    = $x"; done
 	for x in "${optdepends[@]}"; do echo "optdepend = $x"; done
 }
 
