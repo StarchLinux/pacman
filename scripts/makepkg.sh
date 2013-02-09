@@ -75,21 +75,21 @@ function unpksrc {
 
 function writePkginfo {
 	set | grep '^PACKAGER=' >/dev/null || PACKAGER=Unknown
-	echo "pkgname   = $pkgname"
-	echo "pkgver    = $pkgver"
-	echo "pkgdesc   = $pkgdesc"
-	echo "url       = $url"
+	echo "pkgname = $pkgname"
+	echo "pkgver = $pkgver"
+	echo "pkgdesc = $pkgdesc"
+	echo "url = $url"
 	echo "builddate = $(date -u "+%s")"
-	echo "packager  = $PACKAGER"
-	echo "size      = $(dc -e "$(du -sk | cut -f 1) 1024 * p")"
-	echo "arch      = $pkgarch"
+	echo "packager = $PACKAGER"
+	echo "size = $(dc -e "$(du -sk | cut -f 1) 1024 * p")"
+	echo "arch = $pkgarch"
 	
-	for x in "${groups[@]}";     do echo "group  = $x"; done
+	for x in "${groups[@]}";     do echo "group = $x"; done
 	for x in "${backup[@]}";     do echo "backup = $x"; done
-	for x in "${replaces[@]}";   do echo "replaces  = $x"; done
-	for x in "${conflicts[@]}";  do echo "conflict  = $x"; done
-	for x in "${provides[@]}";   do echo "provides  = $x"; done
-	for x in "${depends[@]}";    do echo "depend    = $x"; done
+	for x in "${replaces[@]}";   do echo "replaces = $x"; done
+	for x in "${conflicts[@]}";  do echo "conflict = $x"; done
+	for x in "${provides[@]}";   do echo "provides = $x"; done
+	for x in "${depends[@]}";    do echo "depend = $x"; done
 	for x in "${optdepends[@]}"; do echo "optdepend = $x"; done
 }
 
