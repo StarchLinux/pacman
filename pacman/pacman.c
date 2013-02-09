@@ -338,36 +338,14 @@ static int parsearg_util_addlist(alpm_list_t **list)
  * @param dryrun If nonzero, application state is NOT changed
  * @return 0 if opt was handled, 1 if it was not handled
  */
-static int parsearg_op(int opt, int dryrun)
-{
-	switch(opt) {
-		/* operations */
-		case 'D':
-			if(dryrun) break;
-			config->op = (config->op != PM_OP_MAIN ? 0 : PM_OP_DATABASE); break;
-		case 'Q':
-			if(dryrun) break;
-			config->op = (config->op != PM_OP_MAIN ? 0 : PM_OP_QUERY); break;
-		case 'R':
-			if(dryrun) break;
-			config->op = (config->op != PM_OP_MAIN ? 0 : PM_OP_REMOVE); break;
-		case 'S':
-			if(dryrun) break;
-			config->op = (config->op != PM_OP_MAIN ? 0 : PM_OP_SYNC); break;
-		case 'T':
-			if(dryrun) break;
-			config->op = (config->op != PM_OP_MAIN ? 0 : PM_OP_DEPTEST); break;
-		case 'U':
-			if(dryrun) break;
-			config->op = (config->op != PM_OP_MAIN ? 0 : PM_OP_UPGRADE); break;
-		case 'V':
-			if(dryrun) break;
-			config->version = 1; break;
-		case 'h':
-			if(dryrun) break;
-			config->help = 1; break;
-		default:
+static int parsearg_op(int opt, int dryrun) {
+	if (!strchr ("DHQRSTUV", opt)) return 1;
+	if (!dryrun) {
+		if (config -> op != PM_OP_MAIN) {
+			pm_printf(ALPM_LOG_ERROR, _("only one operation may be used at a time\n"));
 			return 1;
+		}
+		config -> op = opt;
 	}
 	return 0;
 }
@@ -523,10 +501,10 @@ static int parsearg_upgrade(int opt)
 	if(parsearg_trans(opt) == 0)
 		return 0;
 	switch(opt) {
-		case OP_FORCE: config->flags |= ALPM_TRANS_FLAG_FORCE; break;
-		case OP_ASDEPS: config->flags |= ALPM_TRANS_FLAG_ALLDEPS; break;
+		case 'f':           config->flags |= ALPM_TRANS_FLAG_FORCE; break;
+		case OP_ASDEPS:     config->flags |= ALPM_TRANS_FLAG_ALLDEPS; break;
 		case OP_ASEXPLICIT: config->flags |= ALPM_TRANS_FLAG_ALLEXPLICIT; break;
-		case OP_NEEDED: config->flags |= ALPM_TRANS_FLAG_NEEDED; break;
+		case OP_NEEDED:     config->flags |= ALPM_TRANS_FLAG_NEEDED; break;
 		case OP_IGNORE:
 			parsearg_util_addlist(&(config->ignorepkg));
 			break;
@@ -561,6 +539,17 @@ static int parsearg_sync(int opt)
 	return 0;
 }
 
+static int (*choose_argparser (int op))(int) {
+	switch (op) {
+		case 'D': return parsearg_database;
+		case 'Q': return parsearg_query;
+		case 'R': return parsearg_remove;
+		case 'S': return parsearg_sync;
+		case 'U': return parsearg_upgrade;
+		default: return 0;
+	}
+}
+
 /** Parse command-line arguments for each operation.
  * @param argc argc
  * @param argv argv
@@ -571,135 +560,40 @@ static int parseargs(int argc, char *argv[])
 	int opt;
 	int option_index = 0;
 	int result;
-	const char *optstring = "DQRSTUVb:cdefghiklmnopqr:stuvwy";
-	static const struct option opts[] =
-	{
-		{"database",   no_argument,       0, 'D'},
-		{"query",      no_argument,       0, 'Q'},
-		{"remove",     no_argument,       0, 'R'},
-		{"sync",       no_argument,       0, 'S'},
-		{"deptest",    no_argument,       0, 'T'}, /* used by makepkg */
-		{"upgrade",    no_argument,       0, 'U'},
-		{"version",    no_argument,       0, 'V'},
-		{"dbpath",     required_argument, 0, 'b'},
-		{"cascade",    no_argument,       0, 'c'},
-		{"changelog",  no_argument,       0, 'c'},
-		{"clean",      no_argument,       0, 'c'},
-		{"nodeps",     no_argument,       0, 'd'},
-		{"deps",       no_argument,       0, 'd'},
-		{"explicit",   no_argument,       0, 'e'},
-		{"groups",     no_argument,       0, 'g'},
-		{"help",       no_argument,       0, 'h'},
-		{"info",       no_argument,       0, 'i'},
-		{"check",      no_argument,       0, 'k'},
-		{"list",       no_argument,       0, 'l'},
-		{"foreign",    no_argument,       0, 'm'},
-		{"nosave",     no_argument,       0, 'n'},
-		{"owns",       no_argument,       0, 'o'},
-		{"file",       no_argument,       0, 'p'},
-		{"print",      no_argument,       0, 'p'},
-		{"quiet",      no_argument,       0, 'q'},
-		{"root",       required_argument, 0, 'r'},
-		{"recursive",  no_argument,       0, 's'},
-		{"search",     no_argument,       0, 's'},
-		{"unrequired", no_argument,       0, 't'},
-		{"upgrades",   no_argument,       0, 'u'},
-		{"sysupgrade", no_argument,       0, 'u'},
-		{"unneeded",   no_argument,       0, 'u'},
-		{"verbose",    no_argument,       0, 'v'},
-		{"downloadonly", no_argument,     0, 'w'},
-		{"refresh",    no_argument,       0, 'y'},
-
-		{"noconfirm",  no_argument,       0, OP_NOCONFIRM},
-		{"config",     required_argument, 0, OP_CONFIG},
-		{"ignore",     required_argument, 0, OP_IGNORE},
-		{"debug",      optional_argument, 0, OP_DEBUG},
-		{"force",      no_argument,       0, OP_FORCE},
-		{"noprogressbar", no_argument,    0, OP_NOPROGRESSBAR},
-		{"noscriptlet", no_argument,      0, OP_NOSCRIPTLET},
-		{"ask",        required_argument, 0, OP_ASK},
-		{"cachedir",   required_argument, 0, OP_CACHEDIR},
-		{"asdeps",     no_argument,       0, OP_ASDEPS},
-		{"logfile",    required_argument, 0, OP_LOGFILE},
-		{"ignoregroup", required_argument, 0, OP_IGNOREGROUP},
-		{"needed",     no_argument,       0, OP_NEEDED},
-		{"asexplicit",     no_argument,   0, OP_ASEXPLICIT},
-		{"arch",       required_argument, 0, OP_ARCH},
-		{"print-format", required_argument, 0, OP_PRINTFORMAT},
-		{"gpgdir",     required_argument, 0, OP_GPGDIR},
-		{"dbonly",     no_argument,       0, OP_DBONLY},
-		{0, 0, 0, 0}
-	};
+	const char opts[] = "DHQRSTUVb:cdefghiklmnopqr:stuvwy";
 
 	/* parse operation */
-	while((opt = getopt_long(argc, argv, optstring, opts, &option_index))) {
-		if(opt < 0) {
-			break;
-		} else if(opt == 0) {
-			continue;
-		} else if(opt == '?') {
-			/* unknown option, getopt printed an error */
-			return 1;
-		}
-		parsearg_op(opt, 0);
+	for (;;) {
+		opt = getopt(argc, argv, opts);
+		if (opt < 0) break;
+		if (opt == '?' || parsearg_op (opt, 0) != 0) return 1;
 	}
 
-	if(config->op == 0) {
-		pm_printf(ALPM_LOG_ERROR, _("only one operation may be used at a time\n"));
-		return 1;
-	}
-	if(config->help) {
-		usage(config->op, mbasename(argv[0]));
-		return 2;
-	}
-	if(config->version) {
-		version();
-		return 2;
+	switch (config -> op) {
+		case 'H':
+			usage (config->op, mbasename(argv[0]));
+			return 2;
+		case 'V':
+			version ();
+			return 2;
 	}
 
 	/* parse all other options */
 	optind = 1;
-	while((opt = getopt_long(argc, argv, optstring, opts, &option_index))) {
-		if(opt < 0) {
-			break;
-		} else if(opt == 0) {
-			continue;
-		} else if(opt == '?') {
-			/* this should have failed during first pass already */
-			return 1;
-		} else if(parsearg_op(opt, 1) == 0) {
-			/* opt is an operation */
-			continue;
-		}
+	for (;;) {
+		opt = getopt(argc, argv, opts);
+		if (opt <  0) break;
+		if (opt == 0) continue;
+		if (opt == '?') return 1;
+		if (parsearg_op (opt, 1) == 0) /* opt is an operation */ continue;
 
-		switch(config->op) {
-			case PM_OP_DATABASE:
-				result = parsearg_database(opt);
-				break;
-			case PM_OP_QUERY:
-				result = parsearg_query(opt);
-				break;
-			case PM_OP_REMOVE:
-				result = parsearg_remove(opt);
-				break;
-			case PM_OP_SYNC:
-				result = parsearg_sync(opt);
-				break;
-			case PM_OP_UPGRADE:
-				result = parsearg_upgrade(opt);
-				break;
-			case PM_OP_DEPTEST:
-			default:
-				result = 1;
-				break;
-		}
-		if(result == 0) {
-			continue;
-		}
+		if (!choose_argparser (config -> op)) result = 1;
+		else result = (*choose_argparser (config -> op)) (opt);
+		if (result == 0) continue;
 
 		/* fall back to global options */
-		result = parsearg_global(opt);
-		if(result != 0) {
+		result = parsearg_global (opt);
+		if (result != 0) {
 			/* global option parsing failed, abort */
 			pm_printf(ALPM_LOG_ERROR, _("invalid option\n"));
 			return result;

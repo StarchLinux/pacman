@@ -100,12 +100,12 @@ typedef struct __config_t {
 /* Operations */
 enum {
 	PM_OP_MAIN = 1,
-	PM_OP_REMOVE,
-	PM_OP_UPGRADE,
-	PM_OP_QUERY,
-	PM_OP_SYNC,
-	PM_OP_DEPTEST,
-	PM_OP_DATABASE
+	PM_OP_REMOVE   = 'R',
+	PM_OP_UPGRADE  = 'U',
+	PM_OP_QUERY    = 'Q',
+	PM_OP_SYNC     = 'S',
+	PM_OP_DEPTEST  = 'T',
+	PM_OP_DATABASE = 'D',
 };
 
 /* Long Operations */
@@ -127,7 +127,7 @@ enum {
 	OP_PRINTFORMAT,
 	OP_GPGDIR,
 	OP_DBONLY,
-	OP_FORCE
+	OP_FORCE,
 };
 
 /* clean method */
