@@ -110,7 +110,7 @@ function createPackage {
 	
 	test -f .INSTALL && comp_files+=('.INSTALL')
 	
-	test -z "$PKGDEST" && PKGDEST=..
+	test -z "$PKGDEST" && PKGDEST="$startdir"
 	pkg_file="$PKGDEST/${pkgname}-${pkgver}-${pkgrel}-${pkgarch}$PKGEXT"
 	case "$PKGEXT" {
 		(*.tar*)	tar -c "${comp_files[@]}" *;;
