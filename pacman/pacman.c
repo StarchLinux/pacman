@@ -565,8 +565,10 @@ static int parseargs(int argc, char *argv[])
 	/* parse operation */
 	for (;;) {
 		opt = getopt(argc, argv, opts);
-		if (opt < 0) break;
-		if (opt == '?' || parsearg_op (opt, 0) != 0) return 1;
+		if (opt <  0) break;
+		if (opt == 0) continue;
+		if (opt == '?') return 1;
+		parsearg_op (opt, 0);
 	}
 
 	switch (config -> op) {
