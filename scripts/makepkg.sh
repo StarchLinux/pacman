@@ -130,7 +130,7 @@ unset AFlag RFlag dFlag eFlag oFlag
 while getopts 'ARdeop:' o; do
 	case $o in
 		(p)	BUILDSCRIPT="$OPTARG";;
-		(*)	${o}Flag=yes;;
+		(*)	eval "${o}Flag=yes";;
 	esac
 done
 
@@ -171,13 +171,15 @@ set | grep '^RFlag=' >/dev/null || {
 			msg "Unpacking sources..."
 			unpksrc  || exit 1
 		}
-	} && if set | grep '^oFlag='; then exit 0; fi && chdir src && {
+	} && if set | grep '^oFlag='; then exit 0; fi && chdir src && (
 		msg "Building..."
 		set -e
 		build
 		if typeset +f | grep '^check$';   then check;   fi
-		rm -rf "$pkgdir"
-		if typeset +f | grep '^package$'; then package; fi
-		set +e
-	} && chdir "$startdir"
-} && createPackage
+	)
+} && if typeset +f | grep '^package$' >/dev/null; then (
+	set -e
+	rm -rf "$pkgdir"
+	package
+	set +e
+); fi && chdir "$startdir" && createPackage
